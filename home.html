@@ -4,8 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Consulta de CNPJ</title>
-
-    <!-- Estilos CSS -->
     <style>
         /* Reset de margens e padding */
         * {
@@ -29,13 +27,15 @@
             border-radius: 8px;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
             width: 100%;
-            max-width: 600px;
+            max-width: 800px;
             text-align: center;
         }
 
         h1 {
             color: #333;
             margin-bottom: 1rem;
+            font-size: 2rem;
+            font-weight: 600;
         }
 
         p {
@@ -50,7 +50,7 @@
         input[type="text"] {
             padding: 0.75rem;
             font-size: 1.1rem;
-            width: 70%;
+            width: 75%;
             border: 1px solid #ddd;
             border-radius: 4px;
             margin-bottom: 1rem;
@@ -87,11 +87,24 @@
 
         .resultado h3 {
             color: #333;
+            font-size: 1.3rem;
+            margin-bottom: 1rem;
         }
 
         .resultado p {
             font-size: 1rem;
             color: #555;
+            line-height: 1.6;
+        }
+
+        .resultado .info {
+            font-weight: bold;
+            color: #333;
+        }
+
+        .error {
+            color: red;
+            font-weight: bold;
         }
 
         @media (max-width: 600px) {
@@ -106,6 +119,7 @@
     </style>
 </head>
 <body>
+
     <div class="container">
         <h1>Consulta de CNPJ</h1>
         <p>Digite o CNPJ para obter informações detalhadas:</p>
@@ -118,50 +132,67 @@
         <div id="resultado" class="resultado">
             <!-- Resultado da consulta será exibido aqui -->
         </div>
+
+        <div id="error-message" class="error" style="display:none;"></div>
     </div>
 
-    <!-- Script JavaScript -->
     <script>
         document.getElementById('form-cnpj').addEventListener('submit', function(event) {
             event.preventDefault();
 
             const cnpj = document.getElementById('cnpj').value.trim();
+            const resultadoDiv = document.getElementById('resultado');
+            const errorDiv = document.getElementById('error-message');
+            resultadoDiv.style.display = 'none';
+            errorDiv.style.display = 'none';
 
-            // Verifica se o CNPJ tem exatamente 14 dígitos
             if (cnpj.length !== 14 || !/^\d+$/.test(cnpj)) {
-                alert('Por favor, insira um CNPJ válido (somente números).');
+                errorDiv.textContent = 'CNPJ inválido. Por favor, insira um CNPJ válido (somente números).';
+                errorDiv.style.display = 'block';
                 return;
             }
 
             // Exibe uma mensagem de carregamento enquanto a consulta é feita
-            const resultadoDiv = document.getElementById('resultado');
             resultadoDiv.style.display = 'block';
             resultadoDiv.innerHTML = '<p>Consultando...</p>';
 
-            fetch(`https://brasilapi.com.br/api/cnpj/v1/${cnpj}`)
-                .then(response => response.json())
-                .then(data => {
-                    // Exibe o resultado da consulta
-                    if (data.erro) {
-                        resultadoDiv.innerHTML = `<p style="color: red;">Erro: ${data.erro}</p>`;
-                    } else {
-                        resultadoDiv.innerHTML = `
-                            <h3>Resultado da Consulta:</h3>
-                            <p><strong>Nome:</strong> ${data.nome || 'Não disponível'}</p>
-                            <p><strong>Nome Fantasia:</strong> ${data.fantasia || 'Não disponível'}</p>
-                            <p><strong>CNPJ:</strong> ${data.cnpj || 'Não disponível'}</p>
-                            <p><strong>Endereço:</strong> ${data.endereco || 'Não disponível'}</p>
-                            <p><strong>Telefone:</strong> ${data.telefone || 'Não disponível'}</p>
-                            <p><strong>Situação:</strong> ${data.situacao || 'Não disponível'}</p>
-                        `;
+            const apiURLs = [
+                `https://brasilapi.com.br/api/cnpj/v1/${cnpj}`, // BrasilAPI
+                `https://receitasws.com.br/v1/cnpj/${cnpj}`, // ReceitasWS
+                `https://www.receitaws.com.br/v1/cnpj/${cnpj}` // ReceitasWS (versão diferente)
+            ];
+
+            // Fazendo as consultas nas APIs para obter os dados do CNPJ
+            Promise.all(apiURLs.map(url => fetch(url).then(res => res.json())))
+                .then(responses => {
+                    let data = null;
+                    responses.forEach(response => {
+                        if (response && !response.erro) {
+                            data = response;
+                        }
+                    });
+
+                    if (!data) {
+                        resultadoDiv.innerHTML = '<p class="error">Erro: Nenhum dado encontrado para o CNPJ informado.</p>';
+                        return;
                     }
+
+                    // Exibindo os dados obtidos
+                    resultadoDiv.innerHTML = `
+                        <h3>Resultado da Consulta:</h3>
+                        <p><span class="info">Nome:</span> ${data.nome || 'Não disponível'}</p>
+                        <p><span class="info">Nome Fantasia:</span> ${data.fantasia || 'Não disponível'}</p>
+                        <p><span class="info">CNPJ:</span> ${data.cnpj || 'Não disponível'}</p>
+                        <p><span class="info">Endereço:</span> ${data.endereco || 'Não disponível'}</p>
+                        <p><span class="info">Telefone:</span> ${data.telefone || 'Não disponível'}</p>
+                        <p><span class="info">Situação:</span> ${data.situacao || 'Não disponível'}</p>
+                    `;
                 })
                 .catch(error => {
-                    // Em caso de erro de rede ou qualquer outro
-                    console.error('Erro ao consultar o CNPJ:', error);
-                    resultadoDiv.innerHTML = `<p style="color: red;">Erro ao consultar o CNPJ. Tente novamente mais tarde.</p>`;
+                    resultadoDiv.innerHTML = `<p class="error">Erro ao consultar o CNPJ. Tente novamente mais tarde.</p>`;
                 });
         });
     </script>
+
 </body>
 </html>
