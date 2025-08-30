@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>EmpreendaCheck | Dashboard + Processos</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;700&display=swap" rel="stylesheet">
+  <style>
+    body { background: linear-gradient(120deg, #1d2540 0%, #4b206c 100%); font-family: 'Montserrat', Arial, sans-serif; margin: 0; color: #222; min-height: 100vh; }
+    .container { max-width: 700px; margin: 40px auto; background: #fff; border-radius: 18px; box-shadow: 0 8px 32px #2d175a55; padding: 38px 32px 28px 32px; }
+    h1 { color: #5084f8; font-weight: 700; font-size: 2.1em; margin-bottom: 9px; }
+    .subtitle { color: #6a41c7; font-size: 1.08em; margin-bottom: 24px; font-weight: 500; letter-spacing: .5px; }
+    form { display: flex; gap: 12px; margin-bottom: 20px; }
+    input[type="text"],input[type="email"],input[type="password"] { flex: 1; padding: 13px; font-size: 1.09em; border: 2px solid #5084f8; border-radius: 10px; outline: none; background: #ece7f7; color: #222; }
+    input:focus { border-color: #ffd700; background: #fff; }
+    button { background: linear-gradient(90deg, #5084f8 60%, #ffd700 100%); color: #222; border: none; padding: 0 34px; border-radius: 10px; font-size: 1.07em; font-weight: bold; cursor: pointer; box-shadow: 0 2px 10px #ffd70022; }
+    button:disabled { background: #bbb; color: #fff; cursor: not-allowed; }
+    .erro { color: #e6354a; background: #ffe5e8; border-radius: 7px; text-align: center; margin-top: 6px; font-weight: bold; padding: 8px 0; font-size: 1.01em; }
+    .sucesso { color: #5084f8; background: #ece7f7; border-radius: 7px; text-align: center; margin-top: 6px; font-weight: bold; padding: 8px 0; font-size: 1.01em; }
+    .resultado { background: #f4f6fd; border-radius: 14px; padding: 32px 26px 18px 26px; box-shadow: 0 2px 16px #5084f822; margin-top: 26px; font-size: 1.04em; color: #26358c; }
+    .resultado h2 { margin: 0 0 14px 0; color: #5084f8; font-size: 1.35em; font-weight: 700; }
+    .campo { margin-bottom: 12px; font-size: 1em; }
+    .label { color: #6a41c7; font-weight: bold; min-width: 140px; display: inline-block; }
+    .valor { color: #222; font-size: 1.04em; }
+    .secao { margin-top: 21px; margin-bottom: 10px; font-size: 1.07em; font-weight: bold; color: #ffd700; letter-spacing: .7px; }
+    ul { margin: 7px 0 0 0; padding-left: 18px; }
+    ul li { color: #26358c; margin-bottom: 4px; font-size: 1em; }
+    .fonte { color: #5084f8; font-size: .85em; font-style: italic; margin-top: 18px; text-align: right; }
+    .carregando { display: block; margin: 32px auto; text-align: center; color: #5084f8; font-size: 1.1em; }
+    .processos-card { background: #ece7f7; border-radius: 14px; box-shadow: 0 2px 10px #5084f822; margin-top: 32px; margin-bottom: 10px; padding: 26px 22px; }
+    .processos-card h3 { margin-top: 0; color: #ffd700; font-size: 1.15em; font-weight: bold; }
+    .processo-status { font-size: 1.01em; font-weight: 600; }
+    .processo-status.ativo { color: #10b981; }
+    .processo-status.encerrado { color: #e6354a; }
+    .escavador-link { display:inline-block; margin-top:12px; color:#5084f8; font-weight:bold; text-decoration:underline; }
+    .saldo-card {margin-top:32px;margin-bottom:18px;padding:18px 22px;background:#ece7f7;border-radius:14px;box-shadow:0 2px 10px #5084f822;}
+    .saldo-label{font-weight:bold;color:#6a41c7;}.saldo-value{font-size:1.2em;color:#5084f8;}
+    .historico-card{margin-top:32px;margin-bottom:18px;padding:18px 22px;background:#ece7f7;border-radius:14px;box-shadow:0 2px 10px #5084f822;}
+    .historico-title{font-weight:bold;color:#6a41c7;margin-bottom:7px;}
+    .historico-list{font-size:.98em;}
+    .addsaldo-form{display:flex;gap:10px;margin-bottom:12px;}
+    .addsaldo-form input{width:100px;}
+    @media (max-width: 700px) { .container { max-width:98vw;padding:5vw 2vw; }.resultado,.processos-card,.saldo-card,.historico-card{padding:12px 4px;} .label{min-width:80px;} }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>EmpreendaCheck</h1>
+    <div class="subtitle">Consulta CNPJ + Processos Judiciais</div>
+
+    <!-- Login/Cadastro -->
+    <form id="loginForm" autocomplete="off">
+      <input type="email" id="loginEmail" placeholder="E-mail" required autocomplete="username">
+      <input type="password" id="loginPassword" placeholder="Senha" required autocomplete="current-password">
+      <button type="submit">Entrar</button>
+      <button type="button" id="showCadastro" style="background:none;color:#5084f8;">Não tem conta? Cadastre-se</button>
+      <div id="loginMsg"></div>
+    </form>
+    <form id="cadastroForm" autocomplete="off" style="display:none;">
+      <input type="text" id="cadastroNome" placeholder="Nome" required>
+      <input type="email" id="cadastroEmail" placeholder="E-mail" required autocomplete="username">
+      <input type="password" id="cadastroPassword" placeholder="Senha" required autocomplete="new-password">
+      <button type="submit">Cadastrar</button>
+      <button type="button" id="showLogin" style="background:none;color:#5084f8;">Já tenho conta</button>
+      <div id="cadastroMsg"></div>
+    </form>
+
+    <!-- Dashboard -->
+    <div id="dashboard" style="display:none;">
+      <div class="saldo-card">
+        <span class="saldo-label">Seu saldo:</span> <span class="saldo-value" id="saldoVal">R$ 0,00</span>
+        <form class="addsaldo-form" id="addSaldoForm">
+          <input type="number" id="addSaldoInput" min="2" step="1" placeholder="Valor (R$)">
+          <button type="submit">Adicionar crédito</button>
+        </form>
+        <div id="addSaldoMsg"></div>
+      </div>
+      <form id="formCnpj" autocomplete="off">
+        <input type="text" id="cnpjInput" placeholder="Digite o CNPJ" maxlength="18" required autocomplete="off">
+        <button type="submit" id="btnConsultar">Consultar</button>
+      </form>
+      <div id="erro" class="erro"></div>
+      <div id="carregando" class="carregando" style="display:none;">Consultando...</div>
+      <div id="resultado" class="resultado" style="display:none;"></div>
+      <div id="processosCard" class="processos-card" style="display:none;"></div>
+      <div class="historico-card">
+        <div class="historico-title">Histórico de Consultas</div>
+        <ul class="historico-list" id="historicoList"></ul>
+      </div>
+    </div>
+  </div>
+  <script>
+    // UI elements
+    const loginForm = document.getElementById('loginForm');
+    const cadastroForm = document.getElementById('cadastroForm');
+    const dashboardDiv = document.getElementById('dashboard');
+    const showCadastroBtn = document.getElementById('showCadastro');
+    const showLoginBtn = document.getElementById('showLogin');
+    const loginMsg = document.getElementById('loginMsg');
+    const cadastroMsg = document.getElementById('cadastroMsg');
+    const saldoVal = document.getElementById('saldoVal');
+    const addSaldoForm = document.getElementById('addSaldoForm');
+    const addSaldoInput = document.getElementById('addSaldoInput');
+    const addSaldoMsg = document.getElementById('addSaldoMsg');
+    const formCnpj = document.getElementById('formCnpj');
+    const cnpjInput = document.getElementById('cnpjInput');
+    const erroDiv = document.getElementById('erro');
+    const resultadoDiv = document.getElementById('resultado');
+    const btnConsultar = document.getElementById('btnConsultar');
+    const carregandoDiv = document.getElementById('carregando');
+    const processosCard = document.getElementById('processosCard');
+    const historicoList = document.getElementById('historicoList');
+
+    let user = null;
+
+    // Navegação login/cadastro
+    showCadastroBtn.onclick = function() {
+      loginForm.style.display = 'none';
+      cadastroForm.style.display = '';
+      loginMsg.innerHTML = '';
+      cadastroMsg.innerHTML = '';
+    };
+    showLoginBtn.onclick = function() {
+      cadastroForm.style.display = 'none';
+      loginForm.style.display = '';
+      loginMsg.innerHTML = '';
+      cadastroMsg.innerHTML = '';
+    };
+
+    // Cadastro
+    cadastroForm.onsubmit = async function(e){
+      e.preventDefault();
+      cadastroMsg.innerHTML = '';
+      let nome = cadastroForm.cadastroNome.value.trim();
+      let email = cadastroForm.cadastroEmail.value.trim().toLowerCase();
+      let senha = cadastroForm.cadastroPassword.value.trim();
+      if(!nome||!email||!senha){cadastroMsg.innerHTML='<div class="erro">Preencha todos os campos.</div>';return;}
+      let r = await fetch('http://localhost:8080/api/cadastro',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({nome,email,senha})});
+      let j = await r.json();
+      if(j.error) { cadastroMsg.innerHTML='<div class="erro">'+j.error+'</div>'; return; }
+      cadastroMsg.innerHTML='<div class="sucesso">Cadastro realizado! Faça login.</div>';
+      setTimeout(()=>showLoginBtn.click(),1200);
+    };
+
+    // Login
+    loginForm.onsubmit = async function(e){
+      e.preventDefault();
+      loginMsg.innerHTML = '';
+      let email = loginForm.loginEmail.value.trim().toLowerCase();
+      let senha = loginForm.loginPassword.value.trim();
+      let r = await fetch('http://localhost:8080/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,senha})});
+      let j = await r.json();
+      if(j.error) { loginMsg.innerHTML='<div class="erro">'+j.error+'</div>'; return; }
+      user = {nome:j.nome,email:j.email};
+      loginForm.style.display='none'; cadastroForm.style.display='none'; dashboardDiv.style.display='';
+      atualizarSaldo();
+      atualizarHistorico();
+    };
+
+    // Adiciona saldo
+    addSaldoForm.onsubmit = async function(e){
+      e.preventDefault();
+      addSaldoMsg.innerHTML = '';
+      let valor = parseFloat(addSaldoInput.value);
+      if(isNaN(valor)||valor<2){addSaldoMsg.innerHTML='<div class="erro">Mínimo R$ 2,00</div>';return;}
+      let r = await fetch('http://localhost:8080/api/saldo',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:user.email,valor})});
+      let j = await r.json();
+      if(j.error) {addSaldoMsg.innerHTML='<div class="erro">'+j.error+'</div>';return;}
+      saldoVal.textContent = 'R$ ' + j.saldo.toLocaleString('pt-BR',{minimumFractionDigits:2});
+      addSaldoMsg.innerHTML='<div class="sucesso">Crédito adicionado!</div>';
+      addSaldoInput.value='';
+    };
+
+    // Atualiza saldo
+    async function atualizarSaldo(){
+      let r = await fetch('http://localhost:8080/api/saldo?email='+encodeURIComponent(user.email));
+      let j = await r.json();
+      saldoVal.textContent = 'R$ ' + Number(j.saldo).toLocaleString('pt-BR',{minimumFractionDigits:2});
+    }
+
+    // Atualiza histórico
+    async function atualizarHistorico(){
+      let r = await fetch('http://localhost:8080/api/historico?email='+encodeURIComponent(user.email));
+      let j = await r.json();
+      historicoList.innerHTML = '';
+      if(j.historico.length===0) historicoList.innerHTML='<li>Nenhuma consulta realizada.</li>';
+      else j.historico.forEach(h=>{
+        historicoList.innerHTML += `<li>${h.cnpj} - ${h.razao_social} <span style="color:#5084f8;float:right;">${new Date(h.date).toLocaleString('pt-BR')}</span></li>`;
+      });
+    }
+
+    // Consulta CNPJ + Processos
+    formCnpj.onsubmit = async function(e){
+      e.preventDefault();
+      erroDiv.textContent = '';
+      resultadoDiv.style.display = 'none';
+      processosCard.style.display = 'none';
+      carregandoDiv.style.display = 'block';
+      btnConsultar.disabled = true;
+      btnConsultar.textContent = 'Consultando...';
+      let cnpj = cnpjInput.value.replace(/\D/g, '');
+      if (cnpj.length !== 14) {
+        erroDiv.textContent = 'CNPJ inválido!';
+        carregandoDiv.style.display = 'none';
+        btnConsultar.disabled = false;
+        btnConsultar.textContent = 'Consultar';
+        return;
+      }
+      try{
+        let r = await fetch('http://localhost:8080/api/consulta',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:user.email,cnpj})});
+        let j = await r.json();
+        if(j.error){erroDiv.textContent=j.error;carregandoDiv.style.display='none';btnConsultar.disabled=false;btnConsultar.textContent='Consultar';return;}
+        const data = j.data;
+        resultadoDiv.innerHTML = `
+          <h2>${data.razao_social}</h2>
+          <div class="campo"><span class="label">CNPJ:</span> <span class="valor">${data.cnpj}</span></div>
+          <div class="campo"><span class="label">Fantasia:</span> <span class="valor">${data.nome_fantasia}</span></div>
+          <div class="campo"><span class="label">Situação:</span> <span class="valor">${data.descricao_situacao_cadastral}</span></div>
+          <div class="campo"><span class="label">Natureza Jurídica:</span> <span class="valor">${data.natureza_juridica}</span></div>
+          <div class="campo"><span class="label">Capital Social:</span> <span class="valor">${data.capital_social}</span></div>
+          <div class="campo"><span class="label">Abertura:</span> <span class="valor">${data.data_inicio_atividade}</span></div>
+          <div class="campo"><span class="label">Porte:</span> <span class="valor">${data.porte}</span></div>
+          <div class="secao">Endereço</div>
+          <div class="campo"><span class="label">Logradouro:</span> <span class="valor">${data.logradouro}</span></div>
+          <div class="campo"><span class="label">Número:</span> <span class="valor">${data.numero}</span></div>
+          <div class="campo"><span class="label">Complemento:</span> <span class="valor">${data.complemento}</span></div>
+          <div class="campo"><span class="label">Bairro:</span> <span class="valor">${data.bairro}</span></div>
+          <div class="campo"><span class="label">Município:</span> <span class="valor">${data.municipio}</span></div>
+          <div class="campo"><span class="label">UF:</span> <span class="valor">${data.uf}</span></div>
+          <div class="campo"><span class="label">CEP:</span> <span class="valor">${data.cep}</span></div>
+          <div class="secao">Contato</div>
+          <div class="campo"><span class="label">Telefone:</span> <span class="valor">${data.ddd_telefone_1}</span></div>
+          <div class="campo"><span class="label">Email:</span> <span class="valor">${data.email}</span></div>
+          <div class="secao">Atividade Principal</div>
+          <div class="campo"><span class="label">Descrição:</span> <span class="valor">${data.cnae_fiscal_descricao}</span></div>
+          <div class="secao">Atividades Secundárias</div>
+          ${
+            data.cnaes_secundarios && data.cnaes_secundarios.length
+            ? `<ul>` + data.cnaes_secundarios.map(a => `<li>${a.descricao}</li>`).join('') + `</ul>`
+            : `<div class="campo">Não informado</div>`
+          }
+          <div class="secao">Quadro Societário</div>
+          ${
+            data.qsa && data.qsa.length
+            ? `<ul>` + data.qsa.map(s => `<li>${s.nome}${s.qualificacao ? ' ('+s.qualificacao+')' : ''}</li>`).join('') + `</ul>`
+            : `<div class="campo">Não informado</div>`
+          }
+          <div class="secao">Informações Adicionais</div>
+          <div class="campo"><span class="label">Situação Especial:</span> <span class="valor">${data.situacao_especial}</span></div>
+          <div class="campo"><span class="label">Data Situação Especial:</span> <span class="valor">${data.data_situacao_especial}</span></div>
+          <div class="fonte">Dados via BrasilAPI</div>
+        `;
+        resultadoDiv.style.display = 'block';
+        await atualizarSaldo();
+        await atualizarHistorico();
+        // Processos
+        processosCard.style.display='block';
+        processosCard.innerHTML = `<h3>Processos do CNPJ</h3><div class="carregando">Buscando processos judiciais...</div>`;
+        let pr = await fetch('http://localhost:8080/api/processos?cnpj='+encodeURIComponent(cnpj));
+        let pj = await pr.json();
+        let htmlCard = `<h3>Processos do CNPJ</h3>`;
+        if(pj.ativos && pj.ativos.length) htmlCard += `<div class="processo-status ativo">Ativos: ${pj.ativos.length}</div><ul>${pj.ativos.map(p=>`<li>Processo: ${p}</li>`).join('')}</ul>`;
+        if(pj.encerrados && pj.encerrados.length) htmlCard += `<div class="processo-status encerrado">Encerrados: ${pj.encerrados.length}</div><ul>${pj.encerrados.map(p=>`<li>Processo: ${p}</li>`).join('')}</ul>`;
+        if((!pj.ativos||!pj.ativos.length)&&(!pj.encerrados||!pj.encerrados.length)) htmlCard += `<div>Nenhum processo encontrado. Consulte direto no Escavador.</div>`;
+        htmlCard += `<a class="escavador-link" target="_blank" href="${pj.url}">Ver mais no Escavador</a>`;
+        processosCard.innerHTML = htmlCard;
+      }catch(e){
+        erroDiv.textContent = 'Erro ao consultar. Tente novamente!';
+      }
+      carregandoDiv.style.display = 'none';
+      btnConsultar.disabled = false;
+      btnConsultar.textContent = 'Consultar';
+    };
+  </script>
+</body>
+</html>
